@@ -1,0 +1,152 @@
+{% render 'bundle' %}
+
+{% schema %}
+{
+  "name": "Compre Junto",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_bundle",
+      "label": "Mostrar Compre Junto",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Textos"
+    },
+    {
+      "type": "text",
+      "id": "bundle_title",
+      "label": "Título da seção",
+      "default": "LEVE MAIS, PAGANDO MENOS"
+    },
+    {
+      "type": "select",
+      "id": "title_align",
+      "label": "Alinhamento do título",
+      "options": [
+        {
+          "value": "left",
+          "label": "Esquerda"
+        },
+        {
+          "value": "center",
+          "label": "Centro"
+        },
+        {
+          "value": "right",
+          "label": "Direita"
+        }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "label": "Tamanho do título",
+      "min": 16,
+      "max": 36,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "text",
+      "id": "price_label",
+      "label": "Texto do preço total",
+      "default": "Preço total"
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Texto do botão",
+      "default": "LEVAR NA PROMO 😍"
+    },
+    {
+      "type": "header",
+      "content": "Cores"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Cor de fundo",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "title_color",
+      "label": "Cor do título",
+      "default": "#1c1b1b"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Cor da borda",
+      "default": "#e5e5e5"
+    },
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Cor do botão",
+      "default": "#17c000"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Cor do texto do botão",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "price_color",
+      "label": "Cor do preço",
+      "default": "#2eb82e"
+    },
+    {
+      "type": "color",
+      "id": "discount_bg",
+      "label": "Fundo da badge de desconto",
+      "default": "#ff0000"
+    },
+    {
+      "type": "color",
+      "id": "discount_text",
+      "label": "Texto da badge de desconto",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Estilo"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Arredondamento das bordas",
+      "min": 0,
+      "max": 30,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    }
+  ],
+  "blocks": [
+    {
+      "type": "product",
+      "name": "Produto Adicional",
+      "settings": [
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Selecionar produto"
+        }
+      ]
+    }
+  ],
+  "max_blocks": 5,
+  "presets": [
+    {
+      "name": "Compre Junto"
+    }
+  ]
+}
+{% endschema %}

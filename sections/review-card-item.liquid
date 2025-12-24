@@ -1,0 +1,44 @@
+{%- assign r_img = review.imagem | default: review.image -%}
+{%- assign rating_val = review.rating | default: review.nota | plus: 0 -%}
+
+<div class="modern-card">
+  {%- if r_img != blank -%}
+    <div class="card-img-box"><img src="{{ r_img }}" loading="lazy"></div>
+  {%- endif -%}
+  
+  <div class="card-body">
+    <div class="user-info">
+      {%- if section.settings.show_avatars -%}
+        <span class="avatar">{{ review.nome | slice: 0 | upcase }}</span>
+      {%- endif -%}
+      <div class="user-meta">
+        <span class="name">{{ review.nome }}</span>
+        {%- if review.verificado or review.verified -%}
+          <span class="verified-tag">
+            <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            {{ section.settings.verified_text }}
+          </span>
+        {%- endif -%}
+      </div>
+    </div>
+    
+    <div class="card-stars-row">
+       <div class="stars">
+          {%- for i in (1..5) -%}
+            {%- if i <= rating_val -%}<span class="s-filled">★</span>{%- else -%}<span class="s-empty">☆</span>{%- endif -%}
+          {%- endfor -%}
+       </div>
+    </div>
+    
+    <p class="text">{{ review.texto | default: review.review }}</p>
+    
+    <div class="card-footer">
+      {%- if section.settings.show_helpful_button -%}
+        <div class="helpful-box">
+            <span>{{ section.settings.helpful_text }}</span>
+            <button class="btn-like">👍 0</button>
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+</div>

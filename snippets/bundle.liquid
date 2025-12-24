@@ -1,0 +1,795 @@
+{% comment %}
+====================================================
+ COMPRE JUNTO - BUNDLE
+ Compatível com Warehouse 1.9.19
+ Modos: Manual, Bestsellers, Same Collection, By Tag, Mixed
+====================================================
+{% endcomment %}
+
+{% if section.settings.show_bundle %}
+
+{%- assign bundle_mode = section.settings.bundle_mode | default: 'manual' -%}
+{%- assign products_count = section.settings.bundle_products_count | default: 2 -%}
+
+{%- comment -%} Array para coletar produtos {%- endcomment -%}
+{%- assign bundle_products_array = '' -%}
+
+{%- if bundle_mode == 'manual' -%}
+  {%- comment -%} MODO MANUAL {%- endcomment -%}
+  {%- if section.settings.bundle_product_1 != blank -%}
+    {%- assign bundle_products_array = bundle_products_array | append: section.settings.bundle_product_1.id | append: ',' -%}
+  {%- endif -%}
+  {%- if section.settings.bundle_product_2 != blank -%}
+    {%- assign bundle_products_array = bundle_products_array | append: section.settings.bundle_product_2.id | append: ',' -%}
+  {%- endif -%}
+  {%- if section.settings.bundle_product_3 != blank -%}
+    {%- assign bundle_products_array = bundle_products_array | append: section.settings.bundle_product_3.id | append: ',' -%}
+  {%- endif -%}
+  {%- if section.settings.bundle_product_4 != blank -%}
+    {%- assign bundle_products_array = bundle_products_array | append: section.settings.bundle_product_4.id | append: ',' -%}
+  {%- endif -%}
+
+{%- elsif bundle_mode == 'bestsellers' -%}
+  {%- comment -%} MODO BESTSELLERS {%- endcomment -%}
+  {%- assign counter = 0 -%}
+  {%- for p in collections.all.products limit: 30 -%}
+    {%- if p.id != product.id and counter < products_count -%}
+      {%- assign bundle_products_array = bundle_products_array | append: p.id | append: ',' -%}
+      {%- assign counter = counter | plus: 1 -%}
+    {%- endif -%}
+  {%- endfor -%}
+
+{%- elsif bundle_mode == 'same_collection' -%}
+  {%- comment -%} MODO MESMA COLEÇÃO {%- endcomment -%}
+  {%- assign target_collection = collection -%}
+  
+  {%- comment -%} Se não houver collection na URL, pegar a primeira collection do produto {%- endcomment -%}
+  {%- if target_collection == blank and product.collections.size > 0 -%}
+    {%- assign target_collection = product.collections.first -%}
+  {%- endif -%}
+  
+  {%- if target_collection -%}
+    {%- assign counter = 0 -%}
+    {%- for p in target_collection.products limit: 30 -%}
+      {%- if p.id != product.id and counter < products_count -%}
+        {%- assign bundle_products_array = bundle_products_array | append: p.id | append: ',' -%}
+        {%- assign counter = counter | plus: 1 -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+
+{%- elsif bundle_mode == 'by_tag' -%}
+  {%- comment -%} MODO POR TAG {%- endcomment -%}
+  {%- assign search_tag = section.settings.bundle_tag | default: 'bundle' -%}
+  {%- assign counter = 0 -%}
+  {%- for p in collections.all.products limit: 50 -%}
+    {%- if p.tags contains search_tag and p.id != product.id and counter < products_count -%}
+      {%- assign bundle_products_array = bundle_products_array | append: p.id | append: ',' -%}
+      {%- assign counter = counter | plus: 1 -%}
+    {%- endif -%}
+  {%- endfor -%}
+
+{%- elsif bundle_mode == 'mixed' -%}
+  {%- comment -%} MODO MIX {%- endcomment -%}
+  {%- assign half = products_count | divided_by: 2 -%}
+  {%- assign counter = 0 -%}
+  
+  {%- comment -%} Pegar collection do produto {%- endcomment -%}
+  {%- assign target_collection = collection -%}
+  {%- if target_collection == blank and product.collections.size > 0 -%}
+    {%- assign target_collection = product.collections.first -%}
+  {%- endif -%}
+  
+  {%- if target_collection -%}
+    {%- for p in target_collection.products limit: 20 -%}
+      {%- if p.id != product.id and counter < half -%}
+        {%- assign bundle_products_array = bundle_products_array | append: p.id | append: ',' -%}
+        {%- assign counter = counter | plus: 1 -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+  
+  {%- for p in collections.all.products limit: 20 -%}
+    {%- if p.id != product.id and counter < products_count -%}
+      {%- assign already_added = bundle_products_array | split: ',' | where: p.id -%}
+      {%- if already_added.size == 0 -%}
+        {%- assign bundle_products_array = bundle_products_array | append: p.id | append: ',' -%}
+        {%- assign counter = counter | plus: 1 -%}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+
+{%- comment -%} Converter string de IDs em array {%- endcomment -%}
+{%- assign product_ids = bundle_products_array | split: ',' -%}
+{%- assign has_products = false -%}
+{%- for id in product_ids -%}
+  {%- if id != '' -%}
+    {%- assign has_products = true -%}
+    {%- break -%}
+  {%- endif -%}
+{%- endfor -%}
+
+{%- if has_products -%}
+
+<div class="bundle-wrapper">
+  <h2 class="bundle-title">{{ section.settings.bundle_title | default: "LEVE MAIS, PAGANDO MENOS" }}</h2>
+
+  <div class="bundle-top-section">
+    <div class="bundle-images-row" id="bundle-images"></div>
+    
+    <div class="bundle-total-section">
+      <div class="bundle-total-price">
+        {{ section.settings.bundle_price_label | default: "Preço total" }}: 
+        <span class="bundle-price-current" id="bundle-total-current">R$ 0,00</span>
+        <span class="bundle-price-old" id="bundle-total-old" style="display: none;">R$ 0,00</span>
+      </div>
+      
+      <div class="bundle-discount-badge" id="bundle-discount" style="display: none;">
+        <span id="bundle-discount-text"></span>
+      </div>
+      
+      <button type="button" class="bundle-add-button" id="bundle-add-all">
+        {{ section.settings.bundle_button_text | default: "LEVAR NA PROMO" }}
+      </button>
+    </div>
+  </div>
+
+  <div class="bundle-products-list" id="bundle-list"></div>
+</div>
+
+<style>
+/* ===== MELHORIAS PARA DESKTOP ===== */
+
+.bundle-wrapper {
+  background: #fff;
+  
+  padding: 10px;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.bundle-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1c1b1b;
+  margin: 0 0 25px 0;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* SEÇÃO SUPERIOR - Layout em Grid */
+.bundle-top-section {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 30px;
+  margin-bottom: 20px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #e5e5e5;
+  align-items: center;
+}
+
+/* Imagens dos produtos */
+.bundle-images-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bundle-images-row img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+  transition: transform 0.2s ease;
+}
+
+.bundle-images-row img:hover {
+  transform: scale(1.05);
+}
+
+.bundle-images-row .bundle-plus {
+  font-size: 28px;
+  color: #999;
+  font-weight: 300;
+  margin: 0 5px;
+}
+
+/* Seção de Total e Botão */
+.bundle-total-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+}
+
+.bundle-total-price {
+  font-size: 14px;
+  color: #677279;
+  text-align: center;
+}
+
+.bundle-price-current {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  color: #2eb82e;
+  margin-top: 2px;
+}
+
+.bundle-price-old {
+  display: block;
+  font-size: 18px;
+  color: #999;
+  text-decoration: line-through;
+  margin-top: 2px;
+}
+
+.bundle-discount-badge {
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  color: #fff;
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.2);
+}
+
+.bundle-add-button {
+  background: linear-gradient(135deg, #17c000 0%, #14a800 100%);
+  color: #fff;
+  border: none;
+  padding: 18px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(23, 192, 0, 0.3);
+}
+
+.bundle-add-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(23, 192, 0, 0.4);
+}
+
+.bundle-add-button:active {
+  transform: translateY(0);
+}
+
+.bundle-add-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* LISTA DE PRODUTOS - Formato Lista Vertical */
+.bundle-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.bundle-product-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fff;
+  transition: all 0.2s ease;
+}
+
+.bundle-product-item:hover {
+  background: #f9f9f9;
+  border-color: #17c000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.bundle-product-checkbox {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: #17c000;
+}
+
+.bundle-product-checkbox:disabled {
+  cursor: not-allowed;
+}
+
+.bundle-product-image {
+  width: 90px;
+  height: 90px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e5e5e5;
+  flex-shrink: 0;
+}
+
+.bundle-product-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bundle-product-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1c1b1b;
+  line-height: 1.4;
+}
+
+.bundle-product-name small {
+  font-weight: 400;
+  color: #17c000;
+  font-size: 13px;
+  display: block;
+  margin-top: 3px;
+}
+
+.bundle-product-variant {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 0.2s ease;
+}
+
+.bundle-product-variant:hover:not(:disabled) {
+  border-color: #17c000;
+}
+
+.bundle-product-variant:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.bundle-product-variant:focus {
+  outline: 2px solid #17c000;
+  outline-offset: 1px;
+}
+
+.bundle-product-prices {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bundle-product-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2eb82e;
+}
+
+.bundle-product-compare {
+  font-size: 15px;
+  color: #999;
+  text-decoration: line-through;
+}
+
+/* MELHORIAS VISUAIS ADICIONAIS */
+@media (min-width: 1024px) {
+  .bundle-wrapper {
+    padding: 40px;
+  }
+}
+
+/* Tablets */
+@media (max-width: 768px) {
+  .bundle-top-section {
+    grid-template-columns: 1fr;
+  }
+
+  .bundle-images-row {
+    justify-content: center;
+  }
+
+  .bundle-images-row img {
+    width: 100px;
+    height: 100px;
+  }
+
+  .bundle-total-section {
+    width: 100%;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .bundle-wrapper {
+    padding: 20px;
+  }
+
+  .bundle-title {
+    font-size: 20px;
+  }
+
+  .bundle-images-row img {
+    width: 80px;
+    height: 80px;
+  }
+
+  .bundle-price-current {
+    font-size: 26px;
+  }
+
+  .bundle-product-item {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .bundle-product-checkbox {
+    width: 20px;
+    height: 20px;
+  }
+
+  .bundle-product-image {
+    width: 70px;
+    height: 70px;
+  }
+
+  .bundle-product-info {
+    gap: 8px;
+  }
+
+  .bundle-product-name {
+    font-size: 14px;
+  }
+
+  .bundle-product-variant {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  .bundle-product-price {
+    font-size: 18px;
+  }
+
+  .bundle-product-compare {
+    font-size: 14px;
+  }
+}
+</style>
+
+<script>
+(function() {
+  const currentProduct = {
+    id: {{ product.id }},
+    title: {{ product.title | json }},
+    image: {{ product.featured_image | img_url: '300x' | json }},
+    price: {{ product.price }},
+    comparePrice: {{ product.compare_at_price | default: 0 }},
+    variants: [
+      {% for variant in product.variants %}
+        {
+          id: {{ variant.id }},
+          title: {{ variant.title | json }},
+          price: {{ variant.price }},
+          comparePrice: {{ variant.compare_at_price | default: 0 }},
+          available: {{ variant.available }}
+        }{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ]
+  };
+
+  const additionalProducts = [];
+  
+  {%- comment -%} Buscar produtos pelos IDs coletados {%- endcomment -%}
+  {%- if bundle_mode == 'manual' -%}
+    {% if section.settings.bundle_product_1 != blank %}
+      {% assign bp = section.settings.bundle_product_1 %}
+      additionalProducts.push({
+        id: {{ bp.id }},
+        title: {{ bp.title | json }},
+        image: {{ bp.featured_image | img_url: '300x' | json }},
+        price: {{ bp.price }},
+        comparePrice: {{ bp.compare_at_price | default: 0 }},
+        variants: [
+          {% for variant in bp.variants %}
+            {
+              id: {{ variant.id }},
+              title: {{ variant.title | json }},
+              price: {{ variant.price }},
+              comparePrice: {{ variant.compare_at_price | default: 0 }},
+              available: {{ variant.available }}
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ]
+      });
+    {% endif %}
+    
+    {% if section.settings.bundle_product_2 != blank %}
+      {% assign bp = section.settings.bundle_product_2 %}
+      additionalProducts.push({
+        id: {{ bp.id }},
+        title: {{ bp.title | json }},
+        image: {{ bp.featured_image | img_url: '300x' | json }},
+        price: {{ bp.price }},
+        comparePrice: {{ bp.compare_at_price | default: 0 }},
+        variants: [
+          {% for variant in bp.variants %}
+            {
+              id: {{ variant.id }},
+              title: {{ variant.title | json }},
+              price: {{ variant.price }},
+              comparePrice: {{ variant.compare_at_price | default: 0 }},
+              available: {{ variant.available }}
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ]
+      });
+    {% endif %}
+    
+    {% if section.settings.bundle_product_3 != blank %}
+      {% assign bp = section.settings.bundle_product_3 %}
+      additionalProducts.push({
+        id: {{ bp.id }},
+        title: {{ bp.title | json }},
+        image: {{ bp.featured_image | img_url: '300x' | json }},
+        price: {{ bp.price }},
+        comparePrice: {{ bp.compare_at_price | default: 0 }},
+        variants: [
+          {% for variant in bp.variants %}
+            {
+              id: {{ variant.id }},
+              title: {{ variant.title | json }},
+              price: {{ variant.price }},
+              comparePrice: {{ variant.compare_at_price | default: 0 }},
+              available: {{ variant.available }}
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ]
+      });
+    {% endif %}
+    
+    {% if section.settings.bundle_product_4 != blank %}
+      {% assign bp = section.settings.bundle_product_4 %}
+      additionalProducts.push({
+        id: {{ bp.id }},
+        title: {{ bp.title | json }},
+        image: {{ bp.featured_image | img_url: '300x' | json }},
+        price: {{ bp.price }},
+        comparePrice: {{ bp.compare_at_price | default: 0 }},
+        variants: [
+          {% for variant in bp.variants %}
+            {
+              id: {{ variant.id }},
+              title: {{ variant.title | json }},
+              price: {{ variant.price }},
+              comparePrice: {{ variant.compare_at_price | default: 0 }},
+              available: {{ variant.available }}
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ]
+      });
+    {% endif %}
+  {%- else -%}
+    {%- comment -%} Modos automáticos {%- endcomment -%}
+    {%- assign counter = 0 -%}
+    {%- for pid in product_ids -%}
+      {%- if pid != '' -%}
+        {%- assign pid_number = pid | plus: 0 -%}
+        {%- for p in collections.all.products limit: 100 -%}
+          {%- if p.id == pid_number and counter < products_count -%}
+            additionalProducts.push({
+              id: {{ p.id }},
+              title: {{ p.title | json }},
+              image: {{ p.featured_image | img_url: '300x' | json }},
+              price: {{ p.price }},
+              comparePrice: {{ p.compare_at_price | default: 0 }},
+              variants: [
+                {% for variant in p.variants %}
+                  {
+                    id: {{ variant.id }},
+                    title: {{ variant.title | json }},
+                    price: {{ variant.price }},
+                    comparePrice: {{ variant.compare_at_price | default: 0 }},
+                    available: {{ variant.available }}
+                  }{% unless forloop.last %},{% endunless %}
+                {% endfor %}
+              ]
+            });
+            {%- assign counter = counter | plus: 1 -%}
+            {%- break -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+
+  const bundleProducts = [currentProduct, ...additionalProducts];
+
+  const imagesContainer = document.getElementById('bundle-images');
+  let imagesHTML = '';
+  
+  bundleProducts.forEach((product, index) => {
+    if (index > 0) imagesHTML += '<span class="bundle-plus">+</span>';
+    imagesHTML += `<img src="${product.image}" alt="${product.title}">`;
+  });
+  
+  imagesContainer.innerHTML = imagesHTML;
+
+  const listContainer = document.getElementById('bundle-list');
+  let listHTML = '';
+
+  bundleProducts.forEach((product, index) => {
+    const hasCompare = product.comparePrice > product.price;
+    const isCurrentProduct = index === 0;
+    
+    listHTML += `
+      <div class="bundle-product-item" data-index="${index}">
+        <input type="checkbox" 
+               class="bundle-product-checkbox" 
+               data-index="${index}" 
+               ${isCurrentProduct ? 'checked disabled' : 'checked'}>
+        
+        <img src="${product.image}" 
+             alt="${product.title}" 
+             class="bundle-product-image">
+        
+        <div class="bundle-product-info">
+          <div class="bundle-product-name">
+            ${product.title}
+            ${isCurrentProduct ? ' <small>(Este produto)</small>' : ''}
+          </div>
+          
+          ${product.variants.length > 1 ? `
+            <select class="bundle-product-variant" data-index="${index}" ${isCurrentProduct ? 'disabled' : ''}>
+              ${product.variants.map(v => `
+                <option value="${v.id}" 
+                        data-price="${v.price}"
+                        data-compare="${v.comparePrice}"
+                        ${!v.available ? 'disabled' : ''}>
+                  ${v.title} ${!v.available ? '(Esgotado)' : ''}
+                </option>
+              `).join('')}
+            </select>
+          ` : ''}
+          
+          <div class="bundle-product-prices">
+            <span class="bundle-product-price">${formatMoney(product.price)}</span>
+            ${hasCompare ? `
+              <span class="bundle-product-compare">${formatMoney(product.comparePrice)}</span>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  listContainer.innerHTML = listHTML;
+
+  function formatMoney(cents) {
+    return 'R$ ' + (cents / 100).toFixed(2).replace('.', ',');
+  }
+
+  function calculateTotal() {
+    let total = 0;
+    let totalCompare = 0;
+    let hasCompare = false;
+
+    document.querySelectorAll('.bundle-product-checkbox').forEach(checkbox => {
+      if (checkbox.checked) {
+        const index = checkbox.dataset.index;
+        const product = bundleProducts[index];
+        
+        const variantSelect = document.querySelector(`.bundle-product-variant[data-index="${index}"]`);
+        
+        if (variantSelect) {
+          const selectedOption = variantSelect.options[variantSelect.selectedIndex];
+          const price = parseInt(selectedOption.dataset.price);
+          const compare = parseInt(selectedOption.dataset.compare || 0);
+          
+          total += price;
+          if (compare > 0) {
+            totalCompare += compare;
+            hasCompare = true;
+          }
+        } else {
+          total += product.price;
+          if (product.comparePrice > 0) {
+            totalCompare += product.comparePrice;
+            hasCompare = true;
+          }
+        }
+      }
+    });
+
+    document.getElementById('bundle-total-current').textContent = formatMoney(total);
+    
+    const oldPriceEl = document.getElementById('bundle-total-old');
+    const discountEl = document.getElementById('bundle-discount');
+    
+    if (hasCompare && totalCompare > total) {
+      oldPriceEl.textContent = formatMoney(totalCompare);
+      oldPriceEl.style.display = 'inline';
+      
+      const discountPercent = Math.round(((totalCompare - total) / totalCompare) * 100);
+      document.getElementById('bundle-discount-text').textContent = `Economize ${discountPercent}%`;
+      discountEl.style.display = 'block';
+    } else {
+      oldPriceEl.style.display = 'none';
+      discountEl.style.display = 'none';
+    }
+  }
+
+  document.querySelectorAll('.bundle-product-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', calculateTotal);
+  });
+
+  document.querySelectorAll('.bundle-product-variant').forEach(select => {
+    select.addEventListener('change', calculateTotal);
+  });
+
+  document.getElementById('bundle-add-all').addEventListener('click', function() {
+    const button = this;
+    const items = [];
+
+    document.querySelectorAll('.bundle-product-checkbox').forEach(checkbox => {
+      if (checkbox.checked) {
+        const index = checkbox.dataset.index;
+        const product = bundleProducts[index];
+        
+        let variantId;
+        const variantSelect = document.querySelector(`.bundle-product-variant[data-index="${index}"]`);
+        
+        if (variantSelect) {
+          variantId = variantSelect.value;
+        } else {
+          variantId = product.variants[0].id;
+        }
+
+        items.push({
+          id: variantId,
+          quantity: 1
+        });
+      }
+    });
+
+    if (items.length === 0) {
+      alert('Selecione pelo menos um produto!');
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = 'Adicionando...';
+
+    fetch('/cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: items })
+    })
+    .then(response => response.json())
+    .then(() => {
+      window.location.href = '/cart';
+    })
+    .catch(error => {
+      console.error('Erro:', error);
+      alert('Erro ao adicionar produtos');
+      button.disabled = false;
+      button.textContent = {{ section.settings.bundle_button_text | default: 'LEVAR NA PROMO' | json }};
+    });
+  });
+
+  calculateTotal();
+})();
+</script>
+
+{%- endif -%}
+{% endif %}
